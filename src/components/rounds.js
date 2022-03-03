@@ -49,7 +49,7 @@ function rounds(props) {
                                     <p>Turn: {user.position}</p>
                                 </div>
                                 <div className="col-span-10">
-                                <p className="text-gray-500"> ID: {user.userId} </p>
+                                <p className="text-gray-500"> ID: {user.walletAddress} </p>
                                 </div>
                                 <div className="col-span-10">
                                 <p className="text-gray-500"> Name: {user.name} </p>
