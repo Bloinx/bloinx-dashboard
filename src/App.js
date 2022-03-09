@@ -17,9 +17,10 @@ const kit = newKitFromWeb3(web3);
 function App() {
   let [users, setUsers] = useState([]);
   let [rounds, setRounds] = useState([]);
-  let [showModal, setShowModal] = useState(false);
+  let [showInfo, setShowInfo] = useState(false);
   let [contractSearch, setContractSearch] = useState("");
   let [searchResult, setSearchResult] = useState([]);
+  const [usersRound, setUsersRound] = useState([]);
 
   let [stageValue, setStageValue] = useState(-1);
 
@@ -60,15 +61,16 @@ function App() {
       var start = new Date(startTime*1000);
       const saveAmount = await contract.methods.saveAmount.call().call();
       const saveAmountEth = web3.utils.fromWei(saveAmount, 'ether');
-      const realTurn = await contract.methods.getRealTurn.call().call();
+      const turn = await contract.methods.turn.call().call();
       const payTime = await contract.methods.payTime.call().call();
       var pay = new Date(payTime*1000);
+  
       const contractVal = {
         stage: stage,
         totalCashIn: cashEth,
         startTime: start.toLocaleString(),
         saveAmount: saveAmountEth,
-        realTurn: realTurn,
+        turn: turn,
         payTime: pay.toLocaleString()
       };
 
@@ -77,7 +79,8 @@ function App() {
         ...contractVal,
       }));
 
-      setShowModal(true);
+      setShowInfo(true);
+
       const q = query(
         collection(db, "round"),
         where("contract", "==", address)
@@ -86,10 +89,14 @@ function App() {
       querySnapshot.forEach((doc) => {
         // doc.data() is never undefined for query doc snapshots
         setSearchResult((oldArray) => [...oldArray, doc.data()]);
+        setUsersRound((arrUser) =>[...arrUser, doc.data().positions])
+        console.log(doc.data().positions);
       });
     } catch (e) {
       console.log(e);
     }
+
+
   };
 
   return (
@@ -134,99 +141,111 @@ function App() {
       </div>
       {/* <Rounds rounds={rounds}></Rounds>
     <Users users={users}></Users> */}
-      {showModal ? (
-        <div
-          className="fixed z-10 overflow-y-auto top-0 w-full left-0 "
-          id="modal"
-        >
-          <div className="flex items-center justify-center min-height-100vh pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity">
-              <div className="absolute inset-0 bg-gray-900 opacity-75" />
-            </div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen">
-              &#8203;
-            </span>
+      {showInfo ? (
+      <>
+      {
+        searchResult.map((result) => {
+          return (
             <div
-              className="inline-block align-center bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="modal-headline"
+              key={result.contract}
+              className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4"
             >
-              {searchResult.map((result) => {
-                return (
-                  <div
-                    key={result.contract}
-                    className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4"
-                  >
-                    <label>Contract</label>
-                    <input
-                      type="text"
-                      readOnly={true}
-                      value={result.contract}
-                      className="w-full bg-gray-100 p-2 mt-2 mb-3"
-                    />
-                    <label>Stage</label>
-                    <input
-                      readOnly={true}
-                      type="text"
-                      value={contractValues.stage}
-                      className="w-full bg-gray-100 p-2 mt-2 mb-3"
-                    />
-                    <label>Total Cash In</label>
-                    <input
-                      readOnly={true}
-                      type="text"
-                      value={contractValues.totalCashIn}
-                      className="w-full bg-gray-100 p-2 mt-2 mb-3"
-                    />
-                    <label>Start Time</label>
-                    <input
-                      readOnly={true}
-                      type="text"
-                      value={contractValues.startTime}
-                      className="w-full bg-gray-100 p-2 mt-2 mb-3"
-                    />
-                    <label>Save Amount</label>
-                    <input
-                      readOnly={true}
-                      type="text"
-                      value={contractValues.saveAmount}
-                      className="w-full bg-gray-100 p-2 mt-2 mb-3"
-                    />
-                    <label>Real Turn</label>
-                    <input
-                      readOnly={true}
-                      type="text"
-                      value={contractValues.realTurn}
-                      className="w-full bg-gray-100 p-2 mt-2 mb-3"
-                    />
-                    <label>Pay Time</label>
-                    <input
-                      readOnly={true}
-                      type="text"
-                      value={contractValues.payTime}
-                      className="w-full bg-gray-100 p-2 mt-2 mb-3"
-                    />
-                    
-
-                  </div>
-                );
-              })}
-
-              <div className="bg-gray-200 px-4 py-3 text-right">
-                <button
-                  type="button"
-                  className="py-2 px-4 bg-gray-500 text-white rounded hover:bg-gray-700 mr-2"
-                  onClick={() => setShowModal(false)}
-                >
-                  <i className="fas fa-times"></i> Volver
-                </button>
-              </div>
+              <label>Contract</label>
+              <input
+                type="text"
+                readOnly={true}
+                value={result.contract}
+                className="w-full bg-gray-100 p-2 mt-2 mb-3"
+              />
+              <label>Stage</label>
+              <input
+                readOnly={true}
+                type="text"
+                value={contractValues.stage}
+                className="w-full bg-gray-100 p-2 mt-2 mb-3"
+              />
+              <label>Total Cash In</label>
+              <input
+                readOnly={true}
+                type="text"
+                value={contractValues.totalCashIn}
+                className="w-full bg-gray-100 p-2 mt-2 mb-3"
+              />
+              <label>Start Time</label>
+              <input
+                readOnly={true}
+                type="text"
+                value={contractValues.startTime}
+                className="w-full bg-gray-100 p-2 mt-2 mb-3"
+              />
+              <label>Save Amount</label>
+              <input
+                readOnly={true}
+                type="text"
+                value={contractValues.saveAmount}
+                className="w-full bg-gray-100 p-2 mt-2 mb-3"
+              />
+              <label>Turn</label>
+              <input
+                readOnly={true}
+                type="text"
+                value={contractValues.turn}
+                className="w-full bg-gray-100 p-2 mt-2 mb-3"
+              />
+              <label>Pay Time</label>
+              <input
+                readOnly={true}
+                type="text"
+                value={contractValues.payTime}
+                className="w-full bg-gray-100 p-2 mt-2 mb-3"
+              />
             </div>
-          </div>
-        </div>
-      ) : (
-        <></>
+
+          );
+        })
+      }
+
+      {
+                usersRound.map((user) => {
+                  return (
+                    <div
+                      key={user.userId}
+                      className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4"
+                    >
+                      <label>Name</label>
+                      <input
+                        type="text"
+                        readOnly={true}
+                        value={user.name}
+                        className="w-full bg-gray-100 p-2 mt-2 mb-3"
+                      />
+
+
+                      <label>Turn</label>
+                      <input
+                        type="text"
+                        readOnly={true}
+                        value={user.position}
+                        className="w-full bg-gray-100 p-2 mt-2 mb-3"
+                      />
+                      <label>Motivation</label>
+                      <input
+                        type="text"
+                        readOnly={true}
+                        value={user.motivation}
+                        className="w-full bg-gray-100 p-2 mt-2 mb-3"
+                      />
+
+                    </div>
+        
+                  );
+                })
+      }
+      </>
+      
+        ) : (
+        <>
+        </>
       )}
     </div>
   );
